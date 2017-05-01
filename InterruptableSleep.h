@@ -13,11 +13,11 @@ namespace Bosma {
     // It can be interrupted multiple times
     // and be interrupted before any sleep is called (the sleep will immediately complete)
     // Has same interface as condition_variables and futures, except with sleep instead of wait.
-    // Sleep can be called on multiple threads safely, but is not recommended as behaviour is undefined.
+    // For a given object, sleep can be called on multiple threads safely, but is not recommended as behaviour is undefined.
 
   public:
     InterruptableSleep() : interrupted(false) {
-    };
+    }
     InterruptableSleep(const InterruptableSleep &) = delete;
     InterruptableSleep(InterruptableSleep &&) noexcept = delete;
     ~InterruptableSleep() noexcept = default;
