@@ -1,9 +1,11 @@
 # Scheduler
-Modern C++ Scheduling Library. Tasks run in thread pool. Requires [ctpl_stl.h](https://github.com/vit-vit/CTPL) in the path. 
+Modern C++ Header-Only Scheduling Library. Tasks run in thread pool. Requires [ctpl_stl.h](https://github.com/vit-vit/CTPL) in the path. 
 
 Inspired by the [Rufus-Scheduler](https://github.com/jmettraux/rufus-scheduler) gem. Offers mostly the same functionality.
 
 ```C++
+  #include "Scheduler.h"
+
   // number of tasks that can run simultaneously
   // Note: not the number of tasks that can be added,
   //       but number of tasks that can be run in parallel
