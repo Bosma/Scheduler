@@ -14,17 +14,32 @@ namespace Bosma {
     tm = *std::localtime(&tm_adjusted);
   }
 
+  inline void verify_and_set(const std::string& token, const std::string &expression,
+                             int &field, const int lower_bound, const int upper_bound, const bool adjust = false) {
+    if (token == "*")
+      field = -1;
+    else {
+      field = std::stoi(token);
+      if (field < lower_bound || field > upper_bound) throw std::runtime_error("cron out of range: " + expression);
+      if (adjust)
+        field--;
+    }
+  }
+
   class Cron {
   public:
     Cron(const std::string &expression) {
       std::istringstream iss(expression);
       std::vector<std::string> tokens{std::istream_iterator<std::string>{iss},
                                       std::istream_iterator<std::string>{}};
-      minute = (tokens[0] == "*") ? -1 : std::stoi(tokens[0]);
-      hour = (tokens[1] == "*") ? -1 : std::stoi(tokens[1]);
-      day = (tokens[2] == "*") ? -1 : std::stoi(tokens[2]);
-      month = (tokens[3] == "*") ? -1 : std::stoi(tokens[3]);
-      day_of_week = (tokens[4] == "*") ? -1 : std::stoi(tokens[4]);
+
+      if (tokens.size() != 5) throw std::runtime_error("malformed cron string: " + expression);
+
+      verify_and_set(tokens[0], expression, minute, 0, 59);
+      verify_and_set(tokens[1], expression, hour, 0, 23);
+      verify_and_set(tokens[2], expression, day, 1, 31);
+      verify_and_set(tokens[3], expression, month, 1, 12, true);
+      verify_and_set(tokens[4], expression, day_of_week, 0, 6);
     }
 
     // http://stackoverflow.com/a/322058/1284550
@@ -58,7 +73,6 @@ namespace Bosma {
         }
         if (day_of_week != -1 && next.tm_wday != day_of_week) {
           add(next, std::chrono::hours(24));
-          next.tm_wday++;
           next.tm_hour = 0;
           next.tm_min = 0;
           continue;
@@ -75,6 +89,8 @@ namespace Bosma {
         break;
       }
 
+      // telling mktime to figure out dst
+      next.tm_isdst = -1;
       return Clock::from_time_t(std::mktime(&next));
     }
 

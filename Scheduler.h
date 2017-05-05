@@ -133,6 +133,16 @@ namespace Bosma {
       add_task(next_time, std::move(t));
     }
 
+// expression format:
+// from https://en.wikipedia.org/wiki/Cron#Overview
+//    ┌───────────── minute (0 - 59)
+//    │ ┌───────────── hour (0 - 23)
+//    │ │ ┌───────────── day of month (1 - 31)
+//    │ │ │ ┌───────────── month (1 - 12)
+//    │ │ │ │ ┌───────────── day of week (0 - 6) (Sunday to Saturday)
+//    │ │ │ │ │
+//    │ │ │ │ │
+//    * * * * *
     template<typename _Callable, typename... _Args>
     void cron(const std::string &expression, _Callable &&f, _Args &&... args) {
       std::shared_ptr<Task> t = std::make_shared<CronTask>(expression, std::bind(std::forward<_Callable>(f), std::forward<_Args>(args)...));
