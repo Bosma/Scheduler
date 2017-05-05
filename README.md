@@ -21,6 +21,13 @@ Inspired by the [Rufus-Scheduler](https://github.com/jmettraux/rufus-scheduler) 
   // in one minute
   s.in(1min, []() { std::cout << "in one minute" << std::endl; });
 
+  // in one second run lambda, then wait a second, run lambda, and so on
+  // different from every in that multiple instances of the function will not be run concurrently
+  s.interval(1s, []() {
+    std::this_thread::sleep_for(5s);
+    std::cout << "once every 6s" << std::endl;
+  });
+
   s.every(1min, []() { std::cout << "every minute" << std::endl; });
 
   // https://en.wikipedia.org/wiki/Cron

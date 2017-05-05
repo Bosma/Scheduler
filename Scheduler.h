@@ -13,13 +13,15 @@ namespace Bosma {
 
   class Task {
   public:
-    Task(std::function<void()> &&f, bool recur = false) : f(std::move(f)), recur(recur) {}
+    Task(std::function<void()> &&f, bool recur = false, bool interval = false) :
+        f(std::move(f)), recur(recur), interval(interval) {}
 
     virtual Clock::time_point get_new_time() const = 0;
 
     std::function<void()> f;
 
     bool recur;
+    bool interval;
   };
 
   class InTask : public Task {
@@ -32,7 +34,8 @@ namespace Bosma {
 
   class EveryTask : public Task {
   public:
-    EveryTask(std::chrono::nanoseconds time, std::function<void()> &&f) : Task(std::move(f), true), time(time) {}
+    EveryTask(std::chrono::nanoseconds time, std::function<void()> &&f, bool interval = false) :
+        Task(std::move(f), true, interval), time(time) {}
 
     Clock::time_point get_new_time() const override {
       return Clock::now() + time;
@@ -150,6 +153,13 @@ namespace Bosma {
       add_task(next_time, std::move(t));
     }
 
+    template<typename _Callable, typename... _Args>
+    void interval(const std::chrono::nanoseconds time, _Callable &&f, _Args &&... args) {
+      std::shared_ptr<Task> t = std::make_shared<EveryTask>(time, std::bind(std::forward<_Callable>(f), std::forward<_Args>(args)...), true);
+      auto next_time = t->get_new_time();
+      add_task(next_time, std::move(t));
+    }
+
   private:
     std::atomic<bool> done;
 
@@ -176,13 +186,21 @@ namespace Bosma {
 
           auto &task = (*i).second;
 
-          threads.push([task](int) {
-            task->f();
-          });
-
-          // calculate time of next run and add the new task to the tasks to be recurred
-          if (task->recur)
-            recurred_tasks.emplace(task->get_new_time(), std::move(task));
+          if (task->interval) {
+            // if it's an interval task, add the task back after f() is completed
+            threads.push([this, task](int) {
+              task->f();
+              add_task(task->get_new_time(), task);
+            });
+          }
+          else {
+            threads.push([task](int) {
+              task->f();
+            });
+            // calculate time of next run and add the new task to the tasks to be recurred
+            if (task->recur)
+              recurred_tasks.emplace(task->get_new_time(), std::move(task));
+          }
         }
 
         // remove the completed tasks
