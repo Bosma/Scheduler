@@ -75,8 +75,6 @@ namespace Bosma {
       });
     }
 
-    // TODO: add interval() method that will add itself back to the tasks after the task is run
-
     Scheduler(const Scheduler &) = delete;
 
     Scheduler(Scheduler &&) noexcept = delete;
