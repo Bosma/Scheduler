@@ -13,7 +13,7 @@ namespace Bosma {
 
   class Task {
   public:
-    Task(std::function<void()> &&f, bool recur = false, bool interval = false) :
+    explicit Task(std::function<void()> &&f, bool recur = false, bool interval = false) :
         f(std::move(f)), recur(recur), interval(interval) {}
 
     virtual Clock::time_point get_new_time() const = 0;
@@ -26,7 +26,7 @@ namespace Bosma {
 
   class InTask : public Task {
   public:
-    InTask(std::function<void()> &&f) : Task(std::move(f)) {}
+    explicit InTask(std::function<void()> &&f) : Task(std::move(f)) {}
 
     // dummy time_point because it's not used
     Clock::time_point get_new_time() const override { return Clock::time_point(0ns); }
@@ -60,7 +60,7 @@ namespace Bosma {
 
   class Scheduler {
   public:
-    Scheduler(unsigned int max_n_tasks = 4) : done(false), threads(max_n_tasks + 1) {
+    explicit Scheduler(unsigned int max_n_tasks = 4) : done(false), threads(max_n_tasks + 1) {
       threads.push([this](int) {
         while (!done) {
           if (tasks.empty()) {

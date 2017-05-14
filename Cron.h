@@ -28,7 +28,7 @@ namespace Bosma {
 
   class Cron {
   public:
-    Cron(const std::string &expression) {
+    explicit Cron(const std::string &expression) {
       std::istringstream iss(expression);
       std::vector<std::string> tokens{std::istream_iterator<std::string>{iss},
                                       std::istream_iterator<std::string>{}};
