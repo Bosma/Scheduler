@@ -6,7 +6,6 @@
 
 namespace Bosma {
   using Clock = std::chrono::system_clock;
-  using namespace std::chrono_literals;
   
   inline void add(std::tm &tm, std::chrono::nanoseconds time) {
     auto tp = Clock::from_time_t(std::mktime(&tm));

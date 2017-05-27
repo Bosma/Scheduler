@@ -29,7 +29,7 @@ namespace Bosma {
     explicit InTask(std::function<void()> &&f) : Task(std::move(f)) {}
 
     // dummy time_point because it's not used
-    Clock::time_point get_new_time() const override { return Clock::time_point(0ns); }
+    Clock::time_point get_new_time() const override { return Clock::time_point(std::chrono::nanoseconds(0)); }
   };
 
   class EveryTask : public Task {

@@ -2,8 +2,6 @@
 
 #include "Scheduler.h"
 
-using namespace std::chrono_literals;
-
 void message(const std::string &s) {
   std::cout << s << std::endl;
 }
@@ -19,15 +17,15 @@ int main() {
   Bosma::Scheduler s(max_n_threads);
 
   // every second call message("every second")
-  s.every(1s, message, "every second");
+  s.every(std::chrono::seconds(1), message, "every second");
 
   // in one minute
-  s.in(1min, []() { std::cout << "in one minute" << std::endl; });
+  s.in(std::chrono::minutes(1), []() { std::cout << "in one minute" << std::endl; });
 
   // in one second run lambda, then wait a second, run lambda, and so on
   // different from every in that multiple instances of the function will not be run concurrently
-  s.interval(1s, []() {
-    std::this_thread::sleep_for(5s);
+  s.interval(std::chrono::seconds(1), []() {
+    std::this_thread::sleep_for(std::chrono::seconds(5));
     std::cout << "once every 6s" << std::endl;
   });
 
@@ -43,5 +41,5 @@ int main() {
   s.cron("5 0 * * *", []() { std::cout << "every day 5 minutes after midnight" << std::endl; });
 
   // destructor of Bosma::Scheduler will cancel all schedules but finish any tasks currently running
-  std::this_thread::sleep_for(30min);
+  std::this_thread::sleep_for(std::chrono::minutes(10));
 }
