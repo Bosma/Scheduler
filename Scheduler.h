@@ -29,18 +29,18 @@ namespace Bosma {
     explicit InTask(std::function<void()> &&f) : Task(std::move(f)) {}
 
     // dummy time_point because it's not used
-    Clock::time_point get_new_time() const override { return Clock::time_point(std::chrono::nanoseconds(0)); }
+    Clock::time_point get_new_time() const override { return Clock::time_point(Clock::duration(0)); }
   };
 
   class EveryTask : public Task {
   public:
-    EveryTask(std::chrono::nanoseconds time, std::function<void()> &&f, bool interval = false) :
+    EveryTask(Clock::duration time, std::function<void()> &&f, bool interval = false) :
         Task(std::move(f), true, interval), time(time) {}
 
     Clock::time_point get_new_time() const override {
       return Clock::now() + time;
     };
-    std::chrono::nanoseconds time;
+    Clock::duration time;
   };
 
   class CronTask : public Task {
@@ -95,7 +95,7 @@ namespace Bosma {
     }
 
     template<typename _Callable, typename... _Args>
-    void in(const std::chrono::nanoseconds time, _Callable &&f, _Args &&... args) {
+    void in(const Clock::duration time, _Callable &&f, _Args &&... args) {
       in(Clock::now() + time, std::forward<_Callable>(f), std::forward<_Args>(args)...);
     }
 
@@ -128,7 +128,7 @@ namespace Bosma {
     }
 
     template<typename _Callable, typename... _Args>
-    void every(const std::chrono::nanoseconds time, _Callable &&f, _Args &&... args) {
+    void every(const Clock::duration time, _Callable &&f, _Args &&... args) {
       std::shared_ptr<Task> t = std::make_shared<EveryTask>(time, std::bind(std::forward<_Callable>(f), std::forward<_Args>(args)...));
       auto next_time = t->get_new_time();
       add_task(next_time, std::move(t));
@@ -152,7 +152,7 @@ namespace Bosma {
     }
 
     template<typename _Callable, typename... _Args>
-    void interval(const std::chrono::nanoseconds time, _Callable &&f, _Args &&... args) {
+    void interval(const Clock::duration time, _Callable &&f, _Args &&... args) {
       std::shared_ptr<Task> t = std::make_shared<EveryTask>(time, std::bind(std::forward<_Callable>(f), std::forward<_Args>(args)...), true);
       auto next_time = t->get_new_time();
       add_task(next_time, std::move(t));

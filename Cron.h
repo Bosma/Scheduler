@@ -7,9 +7,10 @@
 namespace Bosma {
   using Clock = std::chrono::system_clock;
   
-  inline void add(std::tm &tm, std::chrono::nanoseconds time) {
+  inline void add(std::tm &tm, Clock::duration time) {
     auto tp = Clock::from_time_t(std::mktime(&tm));
-    auto tm_adjusted = Clock::to_time_t(tp + time);
+    auto tp_adjusted = tp + time;
+    auto tm_adjusted = Clock::to_time_t(tp_adjusted);
     tm = *std::localtime(&tm_adjusted);
   }
 
