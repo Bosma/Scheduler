@@ -22,11 +22,11 @@ int main() {
   // in one minute
   s.in(std::chrono::minutes(1), []() { std::cout << "in one minute" << std::endl; });
 
-  // in one second run lambda, then wait a second, run lambda, and so on
-  // different from every in that multiple instances of the function will not be run concurrently
+  // run lambda, then wait a second, run lambda, and so on
+  // different from every in that multiple instances of the function will never be run concurrently
   s.interval(std::chrono::seconds(1), []() {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-    std::cout << "once every 6s" << std::endl;
+    std::cout << "right away, then once every 6s" << std::endl;
+      std::this_thread::sleep_for(std::chrono::seconds(5));
   });
 
   // https://en.wikipedia.org/wiki/Cron

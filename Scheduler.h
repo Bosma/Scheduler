@@ -154,8 +154,7 @@ namespace Bosma {
     template<typename _Callable, typename... _Args>
     void interval(const Clock::duration time, _Callable &&f, _Args &&... args) {
       std::shared_ptr<Task> t = std::make_shared<EveryTask>(time, std::bind(std::forward<_Callable>(f), std::forward<_Args>(args)...), true);
-      auto next_time = t->get_new_time();
-      add_task(next_time, std::move(t));
+      add_task(Clock::now(), std::move(t));
     }
 
   private:
