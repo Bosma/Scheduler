@@ -162,9 +162,9 @@ namespace Bosma {
 
     Bosma::InterruptableSleep sleeper;
 
-    ctpl::thread_pool threads;
     std::multimap<Clock::time_point, std::shared_ptr<Task>> tasks;
     std::mutex lock;
+    ctpl::thread_pool threads;
 
     void add_task(const Clock::time_point time, std::shared_ptr<Task> t) {
       std::lock_guard<std::mutex> l(lock);
