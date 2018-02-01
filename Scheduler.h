@@ -86,7 +86,6 @@ namespace Bosma {
     ~Scheduler() {
       done = true;
       sleeper.interrupt();
-	  threads.stop(true);
     }
 
     template<typename _Callable, typename... _Args>
