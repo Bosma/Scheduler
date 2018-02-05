@@ -157,6 +157,10 @@ namespace Bosma {
       add_task(Clock::now(), std::move(t));
     }
 
+    template<typename _Callable, typename... _Args> void now(_Callable &&f, _Args &&... args) {
+      in(std::chrono::nanoseconds(0), std::forward<_Callable>(f), std::forward<_Args>(args)...);
+    }
+
   private:
     std::atomic<bool> done;
 
