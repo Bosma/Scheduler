@@ -43,9 +43,9 @@ namespace Bosma {
         }
 
         // http://stackoverflow.com/a/322058/1284550
-        Clock::time_point cron_to_next() const {
+        Clock::time_point cron_to_next(const Clock::time_point from = Clock::now()) const {
           // get current time as a tm object
-          auto now = Clock::to_time_t(Clock::now());
+          auto now = Clock::to_time_t(from);
           std::tm next(*std::localtime(&now));
           // it will always at least run the next minute
           next.tm_sec = 0;
