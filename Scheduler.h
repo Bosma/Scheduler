@@ -70,7 +70,6 @@ namespace Bosma {
                   auto time_of_first_task = (*tasks.begin()).first;
                   sleeper.sleep_until(time_of_first_task);
                 }
-                std::lock_guard<std::mutex> l(lock);
                 manage_tasks();
               }
           });
@@ -178,20 +177,26 @@ namespace Bosma {
         }
 
         void manage_tasks() {
+          std::lock_guard<std::mutex> l(lock);
+
           auto end_of_tasks_to_run = tasks.upper_bound(Clock::now());
 
           // if there are any tasks to be run and removed
           if (end_of_tasks_to_run != tasks.begin()) {
+            // keep track of tasks that will be re-added
             decltype(tasks) recurred_tasks;
 
+            // for all tasks that have been triggered
             for (auto i = tasks.begin(); i != end_of_tasks_to_run; ++i) {
 
               auto &task = (*i).second;
 
               if (task->interval) {
-                // if it's an interval task, add the task back after f() is completed
+                // if it's an interval task, only add the task back after f() is completed
                 threads.push([this, task](int) {
                     task->f();
+                    // no risk of race-condition,
+                    // add_task() will wait for manage_tasks() to release lock
                     add_task(task->get_new_time(), task);
                 });
               } else {
