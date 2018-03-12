@@ -14,13 +14,35 @@ namespace Bosma {
       tm = *std::localtime(&tm_adjusted);
     }
 
-    inline void verify_and_set(const std::string &token, const std::string &expression,
-                               int &field, const int lower_bound, const int upper_bound, const bool adjust = false) {
+    class BadCronExpression : public std::exception {
+    public:
+        explicit BadCronExpression(std::string msg) : msg_(std::move(msg)) {}
+
+        const char *what() const noexcept override { return (msg_.c_str()); }
+
+    private:
+        std::string msg_;
+    };
+
+    inline void
+    verify_and_set(const std::string &token, const std::string &expression, int &field, const int lower_bound,
+                   const int upper_bound, const bool adjust = false) {
       if (token == "*")
         field = -1;
       else {
-        field = std::stoi(token);
-        if (field < lower_bound || field > upper_bound) throw std::runtime_error("cron out of range: " + expression);
+        try {
+          field = std::stoi(token);
+        } catch (const std::invalid_argument &e) {
+          throw BadCronExpression("malformed cron string (`" + token + "` not an integer or *): " + expression);
+        } catch (const std::out_of_range &e) {
+          throw BadCronExpression("malformed cron string (`" + token + "` not convertable to int): " + expression);
+        }
+        if (field < lower_bound || field > upper_bound) {
+          std::ostringstream oss;
+          oss << "malformed cron string ('" << token << "' must be <= " << upper_bound << " and >= " << lower_bound
+              << "): " << expression;
+          throw BadCronExpression(oss.str());
+        }
         if (adjust)
           field--;
       }
@@ -33,7 +55,7 @@ namespace Bosma {
           std::vector<std::string> tokens{std::istream_iterator<std::string>{iss},
                                           std::istream_iterator<std::string>{}};
 
-          if (tokens.size() != 5) throw std::runtime_error("malformed cron string: " + expression);
+          if (tokens.size() != 5) throw BadCronExpression("malformed cron string (must be 5 fields): " + expression);
 
           verify_and_set(tokens[0], expression, minute, 0, 59);
           verify_and_set(tokens[1], expression, hour, 0, 23);
