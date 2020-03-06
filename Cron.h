@@ -85,6 +85,7 @@ namespace Bosma {
               next.tm_mday = 1;
               next.tm_hour = 0;
               next.tm_min = 0;
+              add(next, std::chrono::seconds(0));
               continue;
             }
             if (day != -1 && next.tm_mday != day) {
