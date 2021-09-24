@@ -11,7 +11,18 @@ namespace Bosma {
       auto tp = Clock::from_time_t(std::mktime(&tm));
       auto tp_adjusted = tp + time;
       auto tm_adjusted = Clock::to_time_t(tp_adjusted);
+#if !defined(_WIN32)
       tm = *std::localtime(&tm_adjusted);
+#else
+      std::tm next;
+      std::tm* broken = &next;
+      errno_t err = localtime_s(broken, &tm_adjusted);
+      if (err)
+          broken = nullptr;
+      if (broken) {
+          tm = *broken;
+      }
+#endif
     }
 
     class BadCronExpression : public std::exception {
@@ -68,7 +79,16 @@ namespace Bosma {
         Clock::time_point cron_to_next(const Clock::time_point from = Clock::now()) const {
           // get current time as a tm object
           auto now = Clock::to_time_t(from);
+#if !defined(_WIN32)		  
           std::tm next(*std::localtime(&now));
+#else
+          std::tm next;
+          std::tm* broken = &next;
+          errno_t err = localtime_s(broken, &now);
+          if (err)
+              broken = nullptr;
+          if (!broken) throw std::runtime_error("cannot get local time");
+#endif
           // it will always at least run the next minute
           next.tm_sec = 0;
           add(next, std::chrono::minutes(1));

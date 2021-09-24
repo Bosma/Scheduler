@@ -104,7 +104,16 @@ namespace Bosma {
         void at(const std::string &time, _Callable &&f, _Args &&... args) {
           // get current time as a tm object
           auto time_now = Clock::to_time_t(Clock::now());
+#if !defined(_WIN32)
           std::tm tm = *std::localtime(&time_now);
+#else
+          std::tm tm;
+          std::tm* broken = &tm;
+          errno_t err = localtime_s(broken, &time_now);
+          if (err)
+              broken = nullptr;
+          if (!broken) throw std::runtime_error("cannot get local time");
+#endif
 
           // our final time as a time_point
           Clock::time_point tp;
