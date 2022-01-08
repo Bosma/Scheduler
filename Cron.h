@@ -3,6 +3,7 @@
 #include <sstream>
 #include <vector>
 #include <iterator>
+#include <algorithm>
 
 namespace Bosma {
     using Clock = std::chrono::system_clock;
@@ -25,43 +26,59 @@ namespace Bosma {
     };
 
     inline void
-    verify_and_set(const std::string &token, const std::string &expression, int &field, const int lower_bound,
+    verify_and_set(const std::string &token, const std::string &expression, int field[], int size, const int lower_bound,
                    const int upper_bound, const bool adjust = false) {
-      if (token == "*")
-        field = -1;
-      else {
-        try {
-          field = std::stoi(token);
-        } catch (const std::invalid_argument &) {
-          throw BadCronExpression("malformed cron string (`" + token + "` not an integer or *): " + expression);
-        } catch (const std::out_of_range &) {
-          throw BadCronExpression("malformed cron string (`" + token + "` not convertable to int): " + expression);
+    if (token != "*"){
+      try {
+        int i = 0;
+        std::istringstream iss(token);
+        std::string word;
+        while (getline(iss, word, ','))
+        {
+          if (i >= size)
+            throw std::out_of_range("Invalid setsize param");
+          field[i] = std::stoi(word);
+          if (adjust) field[i]--;
+          if (field[i] < lower_bound || field[i] > upper_bound)
+          {
+            std::ostringstream oss;
+            oss << "malformed cron string ('" << token << "' must be <= " << upper_bound << " and >= " << lower_bound
+                << "): " << expression;
+            throw BadCronExpression(oss.str());
+          }
+          i++;
         }
-        if (field < lower_bound || field > upper_bound) {
-          std::ostringstream oss;
-          oss << "malformed cron string ('" << token << "' must be <= " << upper_bound << " and >= " << lower_bound
-              << "): " << expression;
-          throw BadCronExpression(oss.str());
-        }
-        if (adjust)
-          field--;
+      }
+      catch (const std::invalid_argument &)
+      {
+        throw BadCronExpression("malformed cron string (`" + token + "` not an integer or *): " + expression);
+      }
+      catch (const std::out_of_range &)
+      {
+        throw BadCronExpression("malformed cron string (`" + token + "` not convertable to int): " + expression);
       }
     }
+  }
 
     class Cron {
     public:
         explicit Cron(const std::string &expression) {
+          std::fill_n(minute, 60, -1);
+          std::fill_n(hour,   24, -1);
+          std::fill_n(day,    31, -1);
+          std::fill_n(month,  12, -1);
+          std::fill_n(day_of_week, 7, -1);
           std::istringstream iss(expression);
           std::vector<std::string> tokens{std::istream_iterator<std::string>{iss},
                                           std::istream_iterator<std::string>{}};
 
           if (tokens.size() != 5) throw BadCronExpression("malformed cron string (must be 5 fields): " + expression);
 
-          verify_and_set(tokens[0], expression, minute, 0, 59);
-          verify_and_set(tokens[1], expression, hour, 0, 23);
-          verify_and_set(tokens[2], expression, day, 1, 31);
-          verify_and_set(tokens[3], expression, month, 1, 12, true);
-          verify_and_set(tokens[4], expression, day_of_week, 0, 6);
+          verify_and_set(tokens[0], expression, minute, 60, 0, 59);
+          verify_and_set(tokens[1], expression, hour, 24, 0, 23);
+          verify_and_set(tokens[2], expression, day, 31, 1, 31);
+          verify_and_set(tokens[3], expression, month, 12, 1, 12, true);
+          verify_and_set(tokens[4], expression, day_of_week, 7, 0, 6);
         }
 
         // http://stackoverflow.com/a/322058/1284550
@@ -73,7 +90,7 @@ namespace Bosma {
           next.tm_sec = 0;
           add(next, std::chrono::minutes(1));
           while (true) {
-            if (month != -1 && next.tm_mon != month) {
+            if (std::count(month, month+12, -1) < 12 && std::find(month, month+12, next.tm_mon) - month >= 12){
               // add a month
               // if this will bring us over a year, increment the year instead and reset the month
               if (next.tm_mon + 1 > 11) {
@@ -87,24 +104,24 @@ namespace Bosma {
               next.tm_min = 0;
               continue;
             }
-            if (day != -1 && next.tm_mday != day) {
+            if (std::count(day, day+31, -1) < 31 && std::find(day, day+31, next.tm_mday) - day >= 31){
               add(next, std::chrono::hours(24));
               next.tm_hour = 0;
               next.tm_min = 0;
               continue;
             }
-            if (day_of_week != -1 && next.tm_wday != day_of_week) {
+            if (std::count(day_of_week, day_of_week+7, -1) < 7 && std::find(day_of_week, day_of_week+7, next.tm_wday) - day_of_week >= 7) {
               add(next, std::chrono::hours(24));
               next.tm_hour = 0;
               next.tm_min = 0;
               continue;
             }
-            if (hour != -1 && next.tm_hour != hour) {
+            if (std::count(hour, hour + 24, -1) < 24 && std::find(hour, hour+24, next.tm_hour) - hour >= 24) {
               add(next, std::chrono::hours(1));
               next.tm_min = 0;
               continue;
             }
-            if (minute != -1 && next.tm_min != minute) {
+            if (std::count(minute, minute+60, -1) < 60 && std::find(minute, minute+60, next.tm_min) - minute >= 60){
               add(next, std::chrono::minutes(1));
               continue;
             }
@@ -116,6 +133,6 @@ namespace Bosma {
           return Clock::from_time_t(std::mktime(&next));
         }
 
-        int minute, hour, day, month, day_of_week;
+        int minute[60], hour[24], day[31], month[12], day_of_week[7];
     };
 }
